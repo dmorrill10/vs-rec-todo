@@ -1,4 +1,4 @@
-  // TODO: how do I get today's date?
+import { DateTime } from "luxon";
 
 class RecTask {
   desc: String;
@@ -7,8 +7,8 @@ class RecTask {
   frequencyInDays: number;
   priority: number;
   count: number;
-  lastResetDate: Date;
-  lastProgressDate: Date;
+  lastResetDate: DateTime;
+  lastProgressDate: DateTime;
 
   constructor(desc: String, countRequired: number, daysToComplete: number, frequencyInDays: number, priority: number=0) {
     this.desc = desc;
@@ -18,23 +18,22 @@ class RecTask {
     this.priority = priority;
 
     this.count = 0;
-    this.lastResetDate = today();
-    this.lastProgressDate = today();
+    this.lastResetDate = DateTime.now();
+    this.lastProgressDate = DateTime.now();
   }
 
-  dueDate(): Date {
-    // TODO: How do I get the date this.daysToComplete days later than this.lastResetDate?
-    return this.lastResetDate + this.daysToComplete;
+  dueDate(): DateTime {
+    return this.lastResetDate.plus({days: this.daysToComplete});
   }
 
   reset() {
-    this.lastResetDate = today();
+    this.lastResetDate = DateTime.now();
   }
 
   finishedCount() {
     if (this.count < this.countRequired) {
       ++this.count;
-      this.lastProgressDate = today();
+      this.lastProgressDate = DateTime.now();
       if (this.isCompleted()) {
         this.reset();
       }
@@ -49,8 +48,20 @@ class RecTask {
     return this.countRequired - this.count;
   }
 
-  // TODO: what datastructure can be used as a sort key in TS?
   sortKey(): Array<number> {
-    return [this.dueDate().getTime(), this.priority, this.countStillRequired()];
+    return [this.dueDate().toMillis(), this.priority, this.countStillRequired()];
   }
 };
+
+function compareRecTasks(a: RecTask, b: RecTask): number {
+  let aKey = a.sortKey();
+  let bKey = b.sortKey();
+  for (let i = 0; i < aKey.length; ++i) {
+    if (aKey[i] < bKey[i]) {
+      return 1;
+    } else if (aKey[i] > bKey[i]) {
+      return -1;
+    }
+  }
+  return 0;
+}
